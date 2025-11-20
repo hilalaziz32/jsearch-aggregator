@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: job-search-app
+    env: docker
+    plan: free
+    dockerfilePath: Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: RAPIDAPI_KEY
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://your-frontend-url.onrender.com"

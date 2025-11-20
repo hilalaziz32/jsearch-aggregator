@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Search Interface</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Client Finder</h1>
+            <p>Find Helm's next client!</p>
+        </header>
+
+        <main>
+            <form id="searchForm" class="search-form">
+                <div class="search-section">
+                    <div class="search-input-group">
+                        <input 
+                            type="text" 
+                            id="query" 
+                            name="query" 
+                            placeholder="Enter job title, keywords, or description..."
+                            required
+                            class="search-input"
+                        >
+                        <button type="submit" class="search-button">
+                            Search Jobs
+                        </button>
+                    </div>
+                </div>
+
+                <div class="advanced-section">
+                    <button type="button" id="advancedToggle" class="advanced-toggle">
+                        ⚙️ Advanced Settings
+                    </button>
+                    
+                    <div id="advancedSettings" class="advanced-settings" style="display: none;">
+                        <div class="settings-grid">
+                            <div class="form-group">
+                                <label for="num_pages">Number of Pages:</label>
+                                <input type="number" id="num_pages" name="num_pages" value="2" min="1" max="10">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="country">Country:</label>
+                                <input type="text" id="country" name="country" value="us" placeholder="us">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="date_posted">Date Posted:</label>
+                                <select id="date_posted" name="date_posted">
+                                    <option value="all">All</option>
+                                    <option value="today">Today</option>
+                                    <option value="3days">Last 3 Days</option>
+                                    <option value="week">Last Week</option>
+                                    <option value="month">Last Month</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="page">Starting Page:</label>
+                                <input type="number" id="page" name="page" value="1" min="1">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="language">Language:</label>
+                                <input type="text" id="language" name="language" placeholder="en, es, fr...">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="work_from_home">Work From Home Only:</label>
+                                <input type="checkbox" id="work_from_home" name="work_from_home">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="employment_types">Employment Types:</label>
+                                <input type="text" id="employment_types" name="employment_types" placeholder="FULLTIME,CONTRACTOR,PARTTIME,INTERN">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="job_requirements">Job Requirements:</label>
+                                <input type="text" id="job_requirements" name="job_requirements" placeholder="under_3_years_experience,more_than_3_years_experience">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="radius">Search Radius (km):</label>
+                                <input type="number" id="radius" name="radius" placeholder="e.g., 25">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="exclude_job_publishers">Exclude Publishers:</label>
+                                <input type="text" id="exclude_job_publishers" name="exclude_job_publishers" placeholder="BeeBe,Dice">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="fields">Fields to Include:</label>
+                                <input type="text" id="fields" name="fields" placeholder="employer_name,job_title,job_country">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <div id="loading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Searching for jobs...</p>
+            </div>
+
+            <div id="results" class="results"></div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
