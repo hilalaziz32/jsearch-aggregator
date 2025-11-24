@@ -51,7 +51,9 @@ No authentication is required for this API. The API key for the underlying JSear
   "job_requirements": "string (optional)",
   "radius": "integer (optional)",
   "exclude_job_publishers": "string (optional)",
-  "fields": "string (optional)"
+  "fields": "string (optional)",
+  "enable_ai_filter": "boolean (optional, default: true)",
+  "scrape_links": "boolean (optional, default: true)"
 }
 ```
 
@@ -68,6 +70,8 @@ No authentication is required for this API. The API key for the underlying JSear
 - `radius` (optional): Search radius from location in kilometers
 - `exclude_job_publishers` (optional): Comma-separated publishers to exclude (e.g., "BeeBe,Dice")
 - `fields` (optional): Comma-separated fields to include in response (e.g., "employer_name,job_title,job_country")
+- `enable_ai_filter` (optional): Use AI to filter out jobs from big companies (default: true)
+- `scrape_links` (optional): Scrape job posting links for enhanced AI analysis (default: true)
 
 **Response:**
 - **Content-Type:** `text/html; charset=utf-8`
@@ -144,6 +148,23 @@ curl -X GET "http://localhost:8000/export/xlsx/abc12345" \
 - **Professional Formatting**: Clean, professional spreadsheet layout
 - **File Naming**: Files named using first 12 characters of search query and current date (e.g., "software_e-16-11-2025.xlsx")
 
+## AI-Powered Filtering
+
+When `enable_ai_filter` is set to `true` (default), the system:
+
+1. **Scrapes Job Links**: Automatically scrapes job posting URLs to gather additional context
+2. **AI Analysis**: Uses Google Gemini 2.0 Flash to analyze each job posting
+3. **Company Size Detection**: AI determines if the company is:
+   - Small Business (under 100 employees) → **KEEP**
+   - Medium Business (100-500 employees) → **KEEP**
+   - Large companies, enterprise, Fortune 500, or anything bigger → **REMOVE**
+   - **STRICT FILTERING**: Only true SMBs are kept
+4. **Fuzzy Matching**: Uses difflib.SequenceMatcher to interpret AI responses with 70% threshold
+5. **Intelligent Filtering**: Only returns jobs from SMBs and smaller companies
+
+**Environment Variable Required:**
+- `GEMINI_API_KEY`: Your Google Gemini API key (get it from [Google AI Studio](https://makersuite.google.com/app/apikey))
+
 ## HTML Output Features
 
 The returned HTML includes:
@@ -154,6 +175,7 @@ The returned HTML includes:
 - **Job Information**: Title, employer, location, type, salary, description
 - **Apply Links**: Direct links to job application pages
 - **Search Summary**: Query, total jobs found, and request ID
+- **AI-Filtered Results**: Only jobs from SMBs and smaller companies (when enabled)
 
 ## Error Handling
 

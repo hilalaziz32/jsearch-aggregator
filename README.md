@@ -81,21 +81,44 @@ hiring_report/
 
 ## Features
 
+### AI-Powered Job Filtering 🤖
+
+The system intelligently filters job postings to keep only opportunities from small-medium businesses and startups:
+
+1. **Automatic Web Scraping**: When RapidAPI returns job links, the system automatically scrapes them for additional context
+2. **AI Analysis**: Google Gemini 2.0 Flash analyzes each job posting including:
+   - Company name, type, and website
+   - Job description and requirements
+   - Industry codes (NAICS)
+   - Scraped content from job links
+3. **STRICT SMB Filtering**: AI only keeps jobs from:
+   - **Small businesses**: Under 100 employees
+   - **Medium businesses**: 100-500 employees
+   - **Rejects**: Large companies, enterprise, Fortune 500, big tech, advanced medium, anything 500+ employees
+4. **Fuzzy Matching**: Uses difflib.SequenceMatcher with 70% threshold to handle AI response variations
+5. **Object-by-Object Processing**: Each job is analyzed individually for accuracy
+
+**Result**: Only jobs from true SMBs (small and medium businesses) are returned - everything else is filtered out!
+
 ### Frontend
 - **Clean Interface**: Simple search bar with advanced options
 - **Responsive Design**: Works on desktop and mobile
-- **Advanced Settings**: Collapsible configuration panel
+- **Advanced Settings**: Collapsible configuration panel with AI filter toggles
 - **Real-time Results**: Direct HTML rendering from backend
 - **Enhanced UX**: Only one job card expanded at a time
 - **Export Functionality**: XLSX download links
 - **Keyboard Shortcuts**: Quick search and clear functionality
+- **AI Filter Controls**: Toggle AI filtering and link scraping on/off
 
 ### Backend
 - **FastAPI**: Modern, fast Python web framework
+- **🤖 AI-Powered Filtering**: Uses Google Gemini 2.0 Flash to filter out big company jobs
+- **🌐 Automatic Web Scraping**: Scrapes job links for enhanced AI analysis
+- **🎯 Intelligent Matching**: Fuzzy matching with difflib to interpret AI responses
 - **CORS Support**: Configurable cross-origin requests
 - **Environment Configuration**: Secure API key management
 - **HTML Generation**: Beautiful, collapsible job listings
-- **XLSX Export**: Professional spreadsheet downloads
+- **XLSX Export**: Professional spreadsheet downloads with all fields
 - **Error Handling**: Comprehensive error responses
 
 ## API Endpoints
@@ -116,7 +139,8 @@ When running manually:
 
 The backend supports environment variables via `.env` file:
 
-- `RAPIDAPI_KEY` (required): Your JSearch API key
+- `RAPIDAPI_KEY` (required): Your JSearch API key from [RapidAPI](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch)
+- `GEMINI_API_KEY` (required): Your Google Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 - `CORS_ALLOWED_ORIGINS` (optional): Comma-separated allowed origins
 - `HOST` (optional): Server host (default: 0.0.0.0)
 - `PORT` (optional): Server port (default: 8000)

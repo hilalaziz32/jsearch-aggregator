@@ -11,6 +11,7 @@ from pydantic import BaseModel
 import openpyxl
 from openpyxl.styles import Font, Alignment
 from dotenv import load_dotenv
+from ai_filter import filter_jobs_batch
 
 # Load environment variables
 load_dotenv()
@@ -31,6 +32,8 @@ class JobSearchRequest(BaseModel):
     radius: Optional[int] = None
     exclude_job_publishers: Optional[str] = None
     fields: Optional[str] = None
+    enable_ai_filter: Optional[bool] = True
+    scrape_links: Optional[bool] = True
 
 # --- API Configuration ---
 
@@ -333,6 +336,8 @@ async def search_jobs(request: JobSearchRequest):
     - radius: Search radius from location in km (optional)
     - exclude_job_publishers: Comma-separated publishers to exclude (optional)
     - fields: Comma-separated fields to include in response (optional)
+    - enable_ai_filter: Use AI to filter out big company jobs (default: true)
+    - scrape_links: Scrape job links for additional context (default: true)
     """
     
     print(f"Processing job search request for: '{request.query}'")
@@ -382,6 +387,27 @@ async def search_jobs(request: JobSearchRequest):
     
     if not job_data_list:
         raise HTTPException(status_code=404, detail="No jobs found for the given search criteria")
+    
+    print(f"📊 Initial jobs from RapidAPI: {len(job_data_list)}")
+    
+    # Apply AI filtering if enabled
+    if request.enable_ai_filter:
+        print("🤖 AI filtering enabled - starting analysis...")
+        job_data_list = filter_jobs_batch(
+            job_data_list, 
+            scrape_links=request.scrape_links,
+            delay=0.5  # Delay between API calls to avoid rate limiting
+        )
+        
+        if not job_data_list:
+            raise HTTPException(
+                status_code=404, 
+                detail="No jobs passed AI filtering. All jobs were from big companies."
+            )
+        
+        print(f"✅ AI filtering complete. Remaining jobs: {len(job_data_list)}")
+    else:
+        print("⚠️ AI filtering disabled - returning all jobs")
 
     # GENERATE XLSX FILE IMMEDIATELY and store file path in cache
     # This ensures the export link works even if cache is cleared
