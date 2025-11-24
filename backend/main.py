@@ -5,6 +5,7 @@ import requests
 import json
 import os
 import tempfile
+import logging
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel
@@ -12,6 +13,13 @@ import openpyxl
 from openpyxl.styles import Font, Alignment
 from dotenv import load_dotenv
 from ai_filter import filter_jobs_batch
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -342,6 +350,9 @@ async def search_jobs(request: JobSearchRequest):
     
     print(f"Processing job search request for: '{request.query}'")
     
+    logger.info(f"🔍 Processing job search request for: '{request.query}'")
+    logger.debug(f"Request parameters: {request}")
+    
     # Setup API Request with all parameters
     querystring = {
         "query": request.query,
@@ -367,6 +378,7 @@ async def search_jobs(request: JobSearchRequest):
     if request.fields:
         querystring["fields"] = request.fields
     
+    logger.info(f"📡 Calling JSearch API...")
     headers = {
         "x-rapidapi-key": RAPIDAPI_KEY,
         "x-rapidapi-host": "jsearch.p.rapidapi.com"
@@ -377,25 +389,29 @@ async def search_jobs(request: JobSearchRequest):
         response = requests.get(API_URL, headers=headers, params=querystring, timeout=15)
         response.raise_for_status()
         data = response.json()
+        logger.info(f"✅ API response received successfully")
         
     except requests.exceptions.RequestException as e:
+        logger.error(f"❌ API Error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error fetching data from API: {str(e)}")
 
     # Process Data
     job_data_list = data.get('data', [])
     request_id = data.get('request_id', 'unknown-id')
     
-    if not job_data_list:
-        raise HTTPException(status_code=404, detail="No jobs found for the given search criteria")
+    logger.info(f"📊 Initial jobs from RapidAPI: {len(job_data_list)}")
     
-    print(f"📊 Initial jobs from RapidAPI: {len(job_data_list)}")
+    if not job_data_list:
+        logger.warning(f"⚠️ No jobs found for query: {request.query}")
+        raise HTTPException(status_code=404, detail="No jobs found for the given search criteria")
     
     # Apply AI filtering if enabled
     if request.enable_ai_filter:
-        print("🤖 AI filtering enabled - starting analysis...")
-        job_data_list = filter_jobs_batch(
-            job_data_list, 
-            scrape_links=request.scrape_links,
+        logger.info("🤖 AI filtering enabled - starting analysis...")
+        try:
+            job_data_list = filter_jobs_batch(
+                job_data_list, 
+                scrape_links=request.scrape_links,
             delay=0.5  # Delay between API calls to avoid rate limiting
         )
         
