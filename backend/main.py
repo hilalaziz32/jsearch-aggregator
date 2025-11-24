@@ -422,18 +422,23 @@ async def search_jobs(request: JobSearchRequest):
             job_data_list = filter_jobs_batch(
                 job_data_list, 
                 scrape_links=request.scrape_links,
-            delay=0.5  # Delay between API calls to avoid rate limiting
-        )
-        
-        if not job_data_list:
-            raise HTTPException(
-                status_code=404, 
-                detail="No jobs passed AI filtering. All jobs were from big companies."
+                delay=0.5  # Delay between API calls to avoid rate limiting
             )
-        
-        print(f"✅ AI filtering complete. Remaining jobs: {len(job_data_list)}")
+            logger.info(f"✅ AI filtering complete. Remaining jobs: {len(job_data_list)}")
+            
+            if not job_data_list:
+                logger.warning("⚠️ All jobs filtered out by AI")
+                raise HTTPException(
+                    status_code=404, 
+                    detail="No jobs passed AI filtering. All jobs were from big companies."
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"❌ AI filtering error: {str(e)}", exc_info=True)
+            logger.info("⚠️ AI filtering failed, continuing without filtering")
     else:
-        print("⚠️ AI filtering disabled - returning all jobs")
+        logger.info("⚠️ AI filtering disabled - returning all jobs")
 
     # GENERATE XLSX FILE IMMEDIATELY and store file path in cache
     # This ensures the export link works even if cache is cleared
