@@ -526,5 +526,16 @@ async def export_jobs_xlsx(request_id: str):
 
 if __name__ == "__main__":
     import uvicorn
+    
+    logger.info("="*60)
+    logger.info("🚀 Starting Job Search API Server")
+    logger.info("="*60)
+    logger.info(f"RAPIDAPI_KEY: {'✅ Configured' if os.getenv('RAPIDAPI_KEY') else '❌ Missing'}")
+    logger.info(f"GEMINI_API_KEY: {'✅ Configured' if os.getenv('GEMINI_API_KEY') else '❌ Missing'}")
+    logger.info(f"CORS_ALLOWED_ORIGINS: {os.getenv('CORS_ALLOWED_ORIGINS', 'Not set')}")
+    logger.info("="*60)
+    
     port = int(os.getenv("PORT", 8000))
+    logger.info(f"Starting uvicorn on port {port}...")
+    
     uvicorn.run(app, host="0.0.0.0", port=port)
