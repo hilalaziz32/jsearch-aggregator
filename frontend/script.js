@@ -1,22 +1,37 @@
 // API Configuration - will be proxied through nginx
 const API_BASE_URL = '/api';
 
-// DOM Elements
-const searchForm = document.getElementById('searchForm');
-const advancedToggle = document.getElementById('advancedToggle');
-const advancedSettings = document.getElementById('advancedSettings');
-const loadingElement = document.getElementById('loading');
-const resultsElement = document.getElementById('results');
+// DOM Elements - will be initialized after DOM loads
+let searchForm, advancedToggle, advancedSettings, loadingElement, resultsElement;
 
-// Toggle advanced settings
-advancedToggle.addEventListener('click', () => {
-    const isVisible = advancedSettings.style.display === 'block';
-    advancedSettings.style.display = isVisible ? 'none' : 'block';
-    advancedToggle.textContent = isVisible ? '⚙️ Advanced Settings' : '⚙️ Hide Advanced Settings';
+// Initialize DOM elements and event listeners when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Get DOM Elements
+    searchForm = document.getElementById('searchForm');
+    advancedToggle = document.getElementById('advancedToggle');
+    advancedSettings = document.getElementById('advancedSettings');
+    loadingElement = document.getElementById('loading');
+    resultsElement = document.getElementById('results');
+
+    // Check if all elements exist
+    if (!searchForm || !advancedToggle || !advancedSettings || !loadingElement || !resultsElement) {
+        console.error('❌ Error: One or more required DOM elements not found!');
+        return;
+    }
+
+    // Toggle advanced settings
+    advancedToggle.addEventListener('click', () => {
+        const isVisible = advancedSettings.style.display === 'block';
+        advancedSettings.style.display = isVisible ? 'none' : 'block';
+        advancedToggle.textContent = isVisible ? '⚙️ Advanced Settings' : '⚙️ Hide Advanced Settings';
+    });
+
+    // Form submission handler
+    searchForm.addEventListener('submit', handleSubmit);
 });
 
 // Form submission handler
-searchForm.addEventListener('submit', async (event) => {
+async function handleSubmit(event) {
     event.preventDefault();
     
     // Update loading message
@@ -67,7 +82,7 @@ searchForm.addEventListener('submit', async (event) => {
         // Hide loading state
         loadingElement.style.display = 'none';
     }
-});
+}
 
 // Display search results
 function displayResults(htmlContent) {
