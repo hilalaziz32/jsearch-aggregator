@@ -19,16 +19,9 @@ advancedToggle.addEventListener('click', () => {
 searchForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     
-    // Check if AI filtering is enabled
-    const aiFilterEnabled = document.getElementById('enable_ai_filter').checked;
-    
-    // Update loading message based on AI filter status
+    // Update loading message
     const loadingMessage = loadingElement.querySelector('p');
-    if (aiFilterEnabled) {
-        loadingMessage.innerHTML = 'Searching for jobs...<br><small>🤖 AI filtering enabled - analyzing companies...</small>';
-    } else {
-        loadingMessage.textContent = 'Searching for jobs...';
-    }
+    loadingMessage.textContent = 'Searching for jobs...';
     
     // Show loading state
     loadingElement.style.display = 'block';
@@ -41,19 +34,11 @@ searchForm.addEventListener('submit', async (event) => {
         
         // Convert form data to object, handling checkboxes and empty values
         for (const [key, value] of formData.entries()) {
-            if (key === 'work_from_home' || key === 'enable_ai_filter' || key === 'scrape_links') {
+            if (key === 'work_from_home') {
                 searchData[key] = true;
             } else if (value && value.trim() !== '') {
                 searchData[key] = value;
             }
-        }
-        
-        // Ensure boolean fields are always present (even if unchecked)
-        if (!searchData.enable_ai_filter) {
-            searchData.enable_ai_filter = false;
-        }
-        if (!searchData.scrape_links) {
-            searchData.scrape_links = false;
         }
         
         // Make API request
