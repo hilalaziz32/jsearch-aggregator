@@ -50,8 +50,8 @@ class JobSearchRequest(BaseModel):
     radius: Optional[int] = None
     exclude_job_publishers: Optional[str] = None
     fields: Optional[str] = None
-    enable_ai_filter: Optional[bool] = True
-    scrape_links: Optional[bool] = True
+    enable_ai_filter: Optional[bool] = True  # Always enable AI filtering by default
+    scrape_links: Optional[bool] = False  # Scraping disabled - direct AI analysis only
 
 # --- API Configuration ---
 
@@ -417,28 +417,31 @@ async def search_jobs(request: JobSearchRequest):
     
     # Apply AI filtering if enabled
     if request.enable_ai_filter:
-        logger.info("🤖 AI filtering enabled - starting analysis...")
+        logger.info("🤖 AI filtering ENABLED - starting analysis...")
         try:
+            original_count = len(job_data_list)
             job_data_list = filter_jobs_batch(
                 job_data_list, 
                 scrape_links=request.scrape_links,
-                delay=0.5  # Delay between API calls to avoid rate limiting
+                delay=0.5
             )
-            logger.info(f"✅ AI filtering complete. Remaining jobs: {len(job_data_list)}")
+            filtered_count = len(job_data_list)
+            filtered_out = original_count - filtered_count
+            logger.info(f"✅ AI filtering complete: {original_count} → {filtered_count} jobs ({filtered_out} filtered as big companies)")
             
             if not job_data_list:
-                logger.warning("⚠️ All jobs filtered out by AI")
+                logger.warning("⚠️ All jobs filtered out by AI - all were from big companies")
                 raise HTTPException(
                     status_code=404, 
-                    detail="No jobs passed AI filtering. All jobs were from big companies."
+                    detail="No jobs passed AI filtering. All results were from big companies."
                 )
         except HTTPException:
             raise
         except Exception as e:
             logger.error(f"❌ AI filtering error: {str(e)}", exc_info=True)
-            logger.info("⚠️ AI filtering failed, continuing without filtering")
+            logger.warning("⚠️ AI filtering failed - continuing with all jobs")
     else:
-        logger.info("⚠️ AI filtering disabled - returning all jobs")
+        logger.info("⚠️ AI filtering DISABLED - returning all jobs unfiltered")
 
     # GENERATE XLSX FILE IMMEDIATELY and store file path in cache
     # This ensures the export link works even if cache is cleared
