@@ -25,7 +25,7 @@ load_dotenv()
 
 # Load AI filter safely
 try:
-    from ai_filter import filter_jobs_batch
+    from ai_filter_simple import filter_jobs_batch
     logger.info("✅ AI filter module loaded successfully")
 except Exception as e:
     logger.error(f"❌ Failed to load AI filter: {str(e)}", exc_info=True)
