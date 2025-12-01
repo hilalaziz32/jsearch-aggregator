@@ -84,13 +84,14 @@ def is_big_company(company_name: str, job_data: Dict) -> bool:
 
 def analyze_with_gemini(job_data: Dict) -> bool:
     """
-    Uses Gemini AI to analyze if a job should be kept (SMB) or filtered (big company).
+    Uses Gemini AI to analyze if a job should be kept (SMB/Medium) or filtered (big company).
+    Improved prompt with detailed criteria and examples.
     
     Args:
         job_data: Job data from RapidAPI
         
     Returns:
-        True if job should be kept (SMB), False if it should be filtered (big company)
+        True if job should be kept (SMB/Medium), False if it should be filtered (big company)
     """
     
     if not GEMINI_API_KEY:
@@ -98,21 +99,83 @@ def analyze_with_gemini(job_data: Dict) -> bool:
         return True
     
     try:
-        # Prepare job information for AI analysis
+        # Prepare comprehensive job information for AI analysis
         job_info = f"""
-Analyze this job posting to determine if it's from a Small-to-Medium Business (SMB) or a Big Company.
+Analyze this job posting to determine if it's from a Small-to-Medium Business (SMB), Growing Mid-Size Company, or a Big/Enterprise Company.
 
-Job Title: {job_data.get('job_title', 'N/A')}
+**JOB POSTING DETAILS:**
+Title: {job_data.get('job_title', 'N/A')}
 Employer Name: {job_data.get('employer_name', 'N/A')}
 Company Type: {job_data.get('employer_company_type', 'N/A')}
-Employer Website: {job_data.get('employer_website', 'N/A')}
+Website: {job_data.get('employer_website', 'N/A')}
 Location: {job_data.get('job_location', 'N/A')}
-Job Description (first 500 chars): {job_data.get('job_description', 'N/A')[:500]}
+Employment Type: {job_data.get('job_employment_type', 'N/A')}
+NAICS Name: {job_data.get('job_naics_name', 'N/A')}
+Job Description: {job_data.get('job_description', 'N/A')[:1200]}
 
-Based on the information above, is this job from a Small-to-Medium Business (SMB)?
-Answer ONLY with 'yes' or 'no'.
-yes = SMB (keep the job)
-no = Big Company (filter it out)
+---
+
+**CLASSIFICATION CRITERIA:**
+
+**✅ KEEP (Small-to-Medium Business OR Growing Mid-Size Company):**
+- Company size: <500 employees (explicitly mentioned or strongly implied)
+- Startup or early-stage company (Series A/B/C mentioned, founded recently 2020+)
+- References to "high-growth", "scaling", "fast-paced startup"
+- Competitive but reasonable salary/equity packages (not extreme like $200k+ base for mid-level)
+- Culture signals: "unlimited PTO", "flexible work", "work-life balance", "collaborative", "flat structure"
+- Job posting tone: Conversational, direct, personal (not corporate template)
+- Tech startups, boutique agencies, regional companies, niche leaders
+- Company mentions team size like "we're 30 people", "our 150-person team", etc.
+- Mentions of transparency, startup ethos, founder involvement
+- Hybrid or remote work emphasized
+- Equity/stock options mentioned (sign of growth company)
+
+**❌ FILTER OUT (Big/Enterprise Corporation):**
+- Fortune 500 companies (Microsoft, Google, Amazon, Apple, Meta, etc.)
+- Company size: 500+ employees (explicitly stated or strongly implied)
+- Established financial institutions (JPMorgan, Goldman Sachs, Wells Fargo, etc.)
+- Large consulting firms (McKinsey, BCG, Bain, Accenture, Deloitte, etc.)
+- Government/Military/Defense contractors
+- Job posting tone: Formal, corporate template, HR language heavy
+- Extreme compensation (>$200k base for mid-level, $300k+ for senior)
+- Multiple rounds of interviews mentioned (4+ rounds)
+- Formal assessment/coding challenge processes
+- Language: "enterprise", "global operations", "multinational", "Fortune 500", "200,000+ employees"
+- Heavy emphasis on compliance, processes, bureaucracy, audit trails
+- Very formal benefits packages (401k, health insurance as main selling point)
+- "Join our enterprise division" or "corporate structure" mentions
+
+---
+
+**REAL-WORLD EXAMPLES:**
+
+Example 1: KEEP
+"Software Engineer at TechVentures - We're a 45-person AI startup founded in 2022. Offering $120k-$140k + meaningful equity. Our founding team is from Stanford. We offer flexible hours, work from anywhere, and focus on work-life balance. Competitive health insurance & unlimited PTO."
+Result: ✅ YES - Keep (Startup, <50 people, equity, work-life culture, reasonable compensation)
+
+Example 2: KEEP  
+"Full Stack Developer at GrowthCo - We're a 200-person SaaS company growing 40% YoY. Series B funded. $130k-$160k + equity. Remote-first team across US. We believe in transparency and everyone can see our metrics."
+Result: ✅ YES - Keep (Mid-size growth company, <500 people, equity, transparent culture, reasonable pay)
+
+Example 3: FILTER
+"Senior Software Engineer at Microsoft Azure Team - $220k-$280k + bonus + stock. Microsoft is the global leader in cloud computing with 220,000+ employees. Join our enterprise division supporting Fortune 500 clients. Formal interview process with 5 technical rounds."
+Result: ❌ NO - Filter (Fortune 500, 220k+ employees, extreme compensation, formal corporate process)
+
+Example 4: FILTER
+"Senior Developer at Goldman Sachs - $200k-$250k + $100k+ bonus. We are a leading global financial institution. Formal dress code required. Interview process: HR screen, 2 technical rounds, leadership round, final round."
+Result: ❌ NO - Filter (Major financial institution, 40,000+ employees, extreme compensation, very formal process)
+
+---
+
+**YOUR ANALYSIS:**
+
+Based on the job posting above, should this job be KEPT (SMB/Growing) or FILTERED (Big Company)?
+
+Answer ONLY with 'yes' or 'no':
+- 'yes' = Keep this job (it's from an SMB or growing mid-size company)
+- 'no' = Filter this job (it's from a big/enterprise company)
+
+What is your decision?
 """
         
         # Call Gemini API
@@ -122,7 +185,7 @@ no = Big Company (filter it out)
         if response and response.text:
             answer = response.text.strip().lower()
             is_smb = 'yes' in answer
-            logger.debug(f"🤖 Gemini analysis for {job_data.get('employer_name')}: {answer} -> {'KEEP' if is_smb else 'FILTER'}")
+            logger.info(f"🤖 Gemini: {job_data.get('employer_name')} -> {answer} ({'KEEP' if is_smb else 'FILTER'})")
             return is_smb
         else:
             logger.warning("⚠️ No response from Gemini")
