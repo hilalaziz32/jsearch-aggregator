@@ -24,7 +24,7 @@ class JobSearchRequest(BaseModel):
     job_requirements: Optional[str] = None
     radius: Optional[int] = None
 
-# --- API Configuration ---
+# --- FastAPI App Setup ---
 
 app = FastAPI(
     title="Job Search API",
@@ -35,7 +35,7 @@ app = FastAPI(
 # jsearch API configuration
 JSEARCH_API_URL = "https://jsearch.p.rapidapi.com/search"
 
-# CORS Configuration - allow all origins
+# Enable CORS for all origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -45,42 +45,22 @@ app.add_middleware(
 )
 
 
-# --- API Endpoints ---
-
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
     return {"status": "ok", "service": "Job Search API"}
+
 
 @app.post("/search")
 async def search_jobs(request: JobSearchRequest):
-    """
-    Search for jobs using jsearch API and return raw JSON results
-    
-    Parameters:
-    - api_key: Your jsearch RapidAPI key (required)
-    - query: Job search query, e.g., "Python Developer" (required)
-    - num_pages: Number of pages to fetch (default: 1)
-    - page: Starting page number (default: 1)
-    - country: Country code, e.g., "us", "uk", "ca" (default: "us")
-    - date_posted: Date filter - "all", "today", "last_7_days", "last_30_days", "last_90_days" (default: "all")
-    - remote_jobs_only: Only return remote jobs (default: false)
-    - employment_types: Filter by type - "FULLTIME", "PARTTIME", "CONTRACT", "TEMPORARY" (optional)
-    - job_requirements: Filter requirements - "under_3_years_experience", "3_plus_years_experience", etc (optional)
-    - radius: Search radius in miles (optional)
-    
-    Returns: JSON object from jsearch API with job listings and metadata
-    """
-    
+
     try:
-        # Build headers with the provided API key
+        # --- Headers (IMPORTANT: do NOT send Content-Type for GET) ---
         headers = {
             "x-rapidapi-key": request.api_key,
-            "x-rapidapi-host": "jsearch.p.rapidapi.com",
-            "Content-Type": "application/json"
+            "x-rapidapi-host": "jsearch.p.rapidapi.com"
         }
-        
-        # Build query parameters
+
+        # --- Build query params ---
         params = {
             "query": request.query,
             "page": request.page,
@@ -88,8 +68,7 @@ async def search_jobs(request: JobSearchRequest):
             "country": request.country,
             "date_posted": request.date_posted,
         }
-        
-        # Add optional parameters if provided
+
         if request.remote_jobs_only:
             params["remote_jobs_only"] = request.remote_jobs_only
         if request.employment_types:
@@ -98,36 +77,57 @@ async def search_jobs(request: JobSearchRequest):
             params["job_requirements"] = request.job_requirements
         if request.radius:
             params["radius"] = request.radius
-        
-        # Make request to jsearch API
-        response = requests.get(JSEARCH_API_URL, headers=headers, params=params, timeout=30)
-        
-        # Check for errors
+
+        # --- Make request to jsearch ---
+        response = requests.get(
+            JSEARCH_API_URL,
+            headers=headers,
+            params=params,
+            timeout=30
+        )
+
+        # Log important info to Render logs for debugging
+        print("\n-----------------------------")
+        print("JSEARCH STATUS:", response.status_code)
+        print("JSEARCH TEXT:", response.text)
+        print("-----------------------------\n")
+
+        # If jsearch returns error
         if response.status_code != 200:
             raise HTTPException(
                 status_code=response.status_code,
                 detail=f"jsearch API error: {response.text}"
             )
-        
-        # Return the JSON response from jsearch
+
+        # Return the upstream JSON
         return response.json()
-    
+
     except requests.Timeout:
         raise HTTPException(
             status_code=504,
             detail="Request to jsearch API timed out"
         )
+
     except requests.RequestException as e:
         raise HTTPException(
             status_code=500,
             detail=f"Error calling jsearch API: {str(e)}"
         )
+
     except Exception as e:
+        # Print full traceback for debugging
+        import traceback
+        print("ERROR TRACEBACK:\n", traceback.format_exc())
+        print("ERROR TYPE:", type(e))
+        print("ERROR MESSAGE:", str(e))
+
         raise HTTPException(
             status_code=500,
             detail=f"Unexpected error: {str(e)}"
         )
 
+
+# --- Uvicorn runner for local use ---
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
